@@ -1,0 +1,206 @@
+<!doctype html>
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Mandel WebGPU</title>
+  </head>
+  <body>
+    <canvas width="1024" height="1024"></canvas>
+    <script type="module">
+      const WORKGROUP_SIZE = 8;
+
+      const canvas = document.querySelector("canvas");
+
+      // WebGPU device initialization
+      if (!navigator.gpu) {
+        throw new Error("WebGPU not supported on this browser.");
+      }
+
+      const adapter = await navigator.gpu.requestAdapter();
+      if (!adapter) {
+        throw new Error("No appropriate GPUAdapter found.");
+      }
+
+      const device = await adapter.requestDevice();
+
+      console.log("so far so good 1");
+
+      console.log(device.limits);
+
+      const module = device.createShaderModule({
+        code: `
+          @group(0) @binding(0)
+          var<storage, read> input: array<f32>;
+
+          @group(0) @binding(1)
+          var<storage, read_write> output: array<f32>;
+
+          var<private> max_iterations: u32 = 2000;
+          var<private> max_gray_shade:u32 = 255;
+
+          // this is a comment
+          fn gray_shade(iterations: u32) -> u32 {
+            if(iterations >= max_iterations) {
+              return 0;
+            }
+
+            return (max_gray_shade * iterations) / max_iterations;
+          }
+
+          @compute @workgroup_size(64)
+          fn main(
+
+            @builtin(global_invocation_id)
+            global_id : vec3<u32>,
+
+            @builtin(local_invocation_id)
+            local_id : vec3<u32>,
+
+          ) {
+            if(global_id.x >= arrayLength(&output)) {
+              return;
+            }
+
+            var r_size = input[4];
+            var i_size = input[5];
+            var r_pixels = u32(r_size);
+            var i_pixels = u32(i_size);
+            var r_width = input[2] - input[0];
+            var i_width = input[3] - input[1];
+            var r0 = input[0];
+            var i0 = input[1];
+            var iterations: u32 = 0;
+
+            if(global_id.x >= u32(r_pixels * i_pixels)) {
+              iterations = max_iterations;
+            }
+            else {
+              /*output[global_id.x] =
+                f32(global_id.x) * 1000. + f32(local_id.x) +
+                input[local_id.x % 2];*/
+
+              var r_index = global_id.x % r_pixels;
+              var i_index = global_id.x / r_pixels;
+              var r_val0 = r0 + r_width * f32(r_index) / f32(r_pixels);
+              var i_val0 = i0 + i_width * f32(i_index) / f32(i_pixels);
+              var r_val = r_val0;
+              var i_val = i_val0;
+              
+              for(iterations = 0; (r_val * r_val + i_val * i_val <= (2 * 2)) && (iterations < max_iterations); iterations = iterations + 1) {
+                var r_temp = r_val * r_val - i_val * i_val + r_val0;
+                i_val = 2 * r_val * i_val + i_val0;
+                r_val = r_temp;
+              }
+            }
+
+            output[global_id.x] = f32(gray_shade(iterations));
+          }
+        `,
+      });
+
+      const bindGroupLayout =
+        device.createBindGroupLayout({
+            entries: [{
+              binding: 0,
+              visibility: GPUShaderStage.COMPUTE,
+              buffer: {
+                type: "read-only-storage",
+              },
+            },{
+              binding: 1,
+              visibility: GPUShaderStage.COMPUTE,
+              buffer: {
+                type: "storage",
+              },
+            }],
+          });
+
+      const pipeline = device.createComputePipeline({
+        layout: device.createPipelineLayout({
+          bindGroupLayouts: [bindGroupLayout],
+        }),
+        compute: {
+          module,
+          entryPoint: "main",
+        },
+      });
+
+      const BUFFER_SIZE = 1000;
+
+      const input = device.createBuffer({
+        size: BUFFER_SIZE,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      });
+
+      const output = device.createBuffer({
+        size: BUFFER_SIZE,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
+      });
+
+      const stagingBuffer = device.createBuffer({
+        size: BUFFER_SIZE,
+        usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+      });
+
+      const bindGroup = device.createBindGroup({
+        layout: bindGroupLayout,
+        entries: [{
+          binding: 0,
+          resource: {
+            buffer: input,
+          },
+        },{
+          binding: 1,
+          resource: {
+            buffer: output,
+          },
+        }],
+      });
+
+
+
+      const commandEncoder = device.createCommandEncoder();
+      const passEncoder = commandEncoder.beginComputePass();
+      passEncoder.setPipeline(pipeline);
+      passEncoder.setBindGroup(0, bindGroup);
+      passEncoder.dispatchWorkgroups(1);
+      passEncoder.dispatchWorkgroups(Math.ceil(BUFFER_SIZE / 64));
+      passEncoder.end();
+      commandEncoder.copyBufferToBuffer(
+        output,
+        0, // Source offset
+        stagingBuffer,
+        0, // Destination offset
+        BUFFER_SIZE
+      );
+      const commands = commandEncoder.finish();
+
+      let inputArr = new Float32Array(new ArrayBuffer(BUFFER_SIZE));
+      inputArr[0] = -0.751; // bottom left r
+      inputArr[1] = 0.118; // bottom left i
+      inputArr[2] = -0.735; // top right r
+      inputArr[3] = 0.134; // top right i
+      inputArr[4] = 20; // pixels r
+      inputArr[5] = 10; // pixels i
+
+      device.queue.writeBuffer(input, 0, inputArr);
+      device.queue.submit([commands]);
+
+      await stagingBuffer.mapAsync(
+        GPUMapMode.READ,
+        0, // Offset
+        BUFFER_SIZE // Length
+      );
+      const copyArrayBuffer =
+        stagingBuffer.getMappedRange(0, BUFFER_SIZE);
+      const data = copyArrayBuffer.slice();
+      stagingBuffer.unmap();
+      console.log(new Float32Array(data));
+
+
+      console.log("so far so good  2");
+
+    </script>
+  </body>
+</html>
