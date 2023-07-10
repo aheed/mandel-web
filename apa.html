@@ -6,7 +6,7 @@
     <title>Mandel WebGPU</title>
   </head>
   <body>
-    <canvas width="1024" height="1024"></canvas>
+    <canvas id="mandel-canvas" width="80" height="40"></canvas>
     <script type="module">
       const WORKGROUP_SIZE = 8;
 
@@ -126,7 +126,7 @@
         },
       });
 
-      const BUFFER_SIZE = 1000;
+      const BUFFER_SIZE = 10000;
 
       const input = device.createBuffer({
         size: BUFFER_SIZE,
@@ -181,8 +181,8 @@
       inputArr[1] = 0.118; // bottom left i
       inputArr[2] = -0.735; // top right r
       inputArr[3] = 0.134; // top right i
-      inputArr[4] = 20; // pixels r
-      inputArr[5] = 10; // pixels i
+      inputArr[4] = 80; // pixels r
+      inputArr[5] = 40; // pixels i
 
       device.queue.writeBuffer(input, 0, inputArr);
       device.queue.submit([commands]);
@@ -194,12 +194,34 @@
       );
       const copyArrayBuffer =
         stagingBuffer.getMappedRange(0, BUFFER_SIZE);
+      console.log(copyArrayBuffer);
       const data = copyArrayBuffer.slice();
       stagingBuffer.unmap();
       console.log(new Float32Array(data));
 
 
       console.log("so far so good  2");
+
+      let pixelData = new Float32Array(data);
+      const context = canvas.getContext('2d');
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const pixels = imageData.data;
+      let idx = 0;
+      for (let x = 0; x < canvas.width*canvas.height; x++) {
+        pixels[idx] = pixelData[x];
+        idx++;
+        pixels[idx] = pixelData[x];
+        idx++;
+        pixels[idx] = pixelData[x]
+        ;
+        idx++;
+        pixels[idx] = 255;
+        idx++;
+      }	
+      context.putImageData(imageData, 0, 0);
+      console.log(imageData);
+      console.log("so far so good  3");
+
 
     </script>
   </body>
