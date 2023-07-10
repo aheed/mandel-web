@@ -6,13 +6,16 @@
     <title>Mandel WebGPU</title>
   </head>
   <body>
-    <canvas id="mandel-canvas" width="80" height="40"></canvas>
+    <canvas id="mandel-canvas" width="512" height="512"></canvas>
     <script type="module">
       const WORKGROUP_SIZE = 8;
 
       const canvas = document.querySelector("canvas");
 
       const urlParams = new URLSearchParams(window.location.search);
+
+      const rPixels = 240;
+      const iPixels = 240;
       
 
       // WebGPU device initialization
@@ -121,7 +124,7 @@
         },
       });
 
-      const BUFFER_SIZE = 100000;
+      const BUFFER_SIZE = rPixels * iPixels * 4;
 
       const input = device.createBuffer({
         size: BUFFER_SIZE,
@@ -183,8 +186,8 @@
       inputArr[2] = rMax;
       inputArr[3] = iMax;
 
-      inputArr[4] = 80; // pixels r
-      inputArr[5] = 40; // pixels i
+      inputArr[4] = rPixels;
+      inputArr[5] = iPixels;
 
       device.queue.writeBuffer(input, 0, inputArr);
       device.queue.submit([commands]);
@@ -206,10 +209,10 @@
 
       let pixelData = new Float32Array(data);
       const context = canvas.getContext('2d');
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const imageData = context.getImageData(0, 0, rPixels, iPixels);
       const pixels = imageData.data;
       let idx = 0;
-      for (let x = 0; x < canvas.width*canvas.height; x++) {
+      for (let x = 0; x < rPixels*iPixels; x++) {
         pixels[idx] = pixelData[x];
         idx++;
         pixels[idx] = pixelData[x];
@@ -219,7 +222,7 @@
         idx++;
         pixels[idx] = 255;
         idx++;
-      }	
+      }
       context.putImageData(imageData, 0, 0);
       console.log(imageData);
       console.log("so far so good  3");
