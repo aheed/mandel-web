@@ -44,11 +44,7 @@
 
           // this is a comment
           fn gray_shade(iterations: u32) -> u32 {
-            if(iterations >= max_iterations) {
-              return 0;
-            }
-
-            return (max_gray_shade * iterations) / max_iterations;
+            return max_gray_shade - (max_gray_shade * iterations) / max_iterations;
           }
 
           @compute @workgroup_size(64)
@@ -79,10 +75,6 @@
               iterations = max_iterations;
             }
             else {
-              /*output[global_id.x] =
-                f32(global_id.x) * 1000. + f32(local_id.x) +
-                input[local_id.x % 2];*/
-
               var r_index = global_id.x % r_pixels;
               var i_index = global_id.x / r_pixels;
               var r_val0 = r0 + r_width * f32(r_index) / f32(r_pixels);
@@ -129,7 +121,7 @@
         },
       });
 
-      const BUFFER_SIZE = 10000;
+      const BUFFER_SIZE = 100000;
 
       const input = device.createBuffer({
         size: BUFFER_SIZE,
@@ -179,8 +171,8 @@
       );
       const commands = commandEncoder.finish();
 
-      const rMin = urlParams.get('rmin') ?? -1.0;
-      const rMax = urlParams.get('rmax') ?? 1.0;
+      const rMin = urlParams.get('rmin') ?? -2.0;
+      const rMax = urlParams.get('rmax') ?? 2.0;
       const iMin = urlParams.get('imin') ?? -1.0;
       const iMax = urlParams.get('imax') ?? 1.0;
       console.log(rMin, rMax, iMin, iMax);
