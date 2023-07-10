@@ -1,3 +1,10 @@
+query params:
+rMin, rMax, iMin, iMax: complex plane boundaries
+
+example: 
+?rmin=-0.751&rmax=-0.735&imin=0.118&imax=0.134
+
+
 todo:
 
 Use compute pipeline to calculate Mandelbrot set:
