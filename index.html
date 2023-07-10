@@ -7,10 +7,12 @@
   </head>
   <body>
     <canvas id="mandel-canvas" width="256" height="256"></canvas>
+    <div id="status-msg"></div>
     <script type="module">
       const WORKGROUP_SIZE = 8;
 
       const canvas = document.querySelector("canvas");
+      const statusMsg = document.querySelector("div");
 
       const urlParams = new URLSearchParams(window.location.search);
 
@@ -20,12 +22,16 @@
 
       // WebGPU device initialization
       if (!navigator.gpu) {
-        throw new Error("WebGPU not supported on this browser.");
+        const errMsg = "WebGPU not supported on this browser.";
+        statusMsg.innerText = errMsg;
+        throw new Error(errMsg);
       }
 
       const adapter = await navigator.gpu.requestAdapter();
       if (!adapter) {
-        throw new Error("No appropriate GPUAdapter found.");
+        const errMsg = "No appropriate GPUAdapter found.";
+        statusMsg.innerText = errMsg;
+        throw new Error(errMsg);
       }
 
       const device = await adapter.requestDevice();
@@ -33,6 +39,8 @@
       console.log("so far so good 1");
 
       console.log(device.limits);
+
+      statusMsg.innerText = "Rendering...";
 
       const module = device.createShaderModule({
         code: `
@@ -226,6 +234,7 @@
       context.putImageData(imageData, 0, 0);
       console.log(imageData);
       console.log("so far so good  3");
+      statusMsg.innerText = "Done!";
 
 
     </script>
