@@ -12,6 +12,9 @@
 
       const canvas = document.querySelector("canvas");
 
+      const urlParams = new URLSearchParams(window.location.search);
+      
+
       // WebGPU device initialization
       if (!navigator.gpu) {
         throw new Error("WebGPU not supported on this browser.");
@@ -176,11 +179,18 @@
       );
       const commands = commandEncoder.finish();
 
+      const rMin = urlParams.get('rmin') ?? -1.0;
+      const rMax = urlParams.get('rmax') ?? 1.0;
+      const iMin = urlParams.get('imin') ?? -1.0;
+      const iMax = urlParams.get('imax') ?? 1.0;
+      console.log(rMin, rMax, iMin, iMax);
+
       let inputArr = new Float32Array(new ArrayBuffer(BUFFER_SIZE));
-      inputArr[0] = -0.751; // bottom left r
-      inputArr[1] = 0.118; // bottom left i
-      inputArr[2] = -0.735; // top right r
-      inputArr[3] = 0.134; // top right i
+      inputArr[0] = rMin;
+      inputArr[1] = iMin;
+      inputArr[2] = rMax;
+      inputArr[3] = iMax;
+
       inputArr[4] = 80; // pixels r
       inputArr[5] = 40; // pixels i
 
