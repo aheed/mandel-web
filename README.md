@@ -1,5 +1,5 @@
 query params:
-rMin, rMax, iMin, iMax: complex plane boundaries
+rmin, rmax, imin, imax: complex plane boundaries
 
 example: 
 ?rmin=-0.751&rmax=-0.735&imin=0.118&imax=0.134
@@ -7,13 +7,13 @@ example:
 
 todo:
 
-Use compute pipeline to calculate Mandelbrot set:
+Use compute pipeline to calculate Mandelbrot set:*
 https://surma.dev/things/webgpu/
 
 Display raw data in a canvas using canvas2D and drawImage:
   https://stackoverflow.com/questions/12553265/draw-raw-image-into-canvas
 
-Probably easier: Display raw data in a canvas using canvas2D and createImageData/putImageData:
+Probably easier: Display raw data in a canvas using canvas2D and createImageData/putImageData:*
 https://www.w3schools.com/jsref/canvas_createimagedata.asp
   Possible to copy webgpu output directly to imageData.data?
   Otherwise use a naive approach and iterate pixel by pixel. Example: http://jsfiddle.net/gaziya/0m2ysujp/47/

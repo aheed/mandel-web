@@ -6,18 +6,20 @@
     <title>Mandel WebGPU</title>
   </head>
   <body>
-    <canvas id="mandel-canvas" width="256" height="256"></canvas>
+    <canvas id="mandel-canvas" width="512" height="512"></canvas>
+    <canvas id="mandel-canvas2" width="256" height="256"></canvas>
     <div id="status-msg"></div>
     <script type="module">
       const WORKGROUP_SIZE = 8;
 
-      const canvas = document.querySelector("canvas");
+      const canvas = document.querySelector("#mandel-canvas");
+      const canvas2 = document.querySelector ("#mandel-canvas2");
       const statusMsg = document.querySelector("div");
 
       const urlParams = new URLSearchParams(window.location.search);
 
-      const rPixels = 240;
-      const iPixels = 240;
+      const rPixels = 512;
+      const iPixels = 512;
       
 
       // WebGPU device initialization
@@ -53,9 +55,54 @@
           var<private> max_iterations: u32 = 2000;
           var<private> max_gray_shade:u32 = 255;
 
-          // this is a comment
           fn gray_shade(iterations: u32) -> u32 {
             return max_gray_shade - (max_gray_shade * iterations) / max_iterations;
+          }
+
+          fn gray_shade2(iterations: u32) -> u32 {
+            if(iterations >= max_iterations) {
+              return 0;
+            }
+
+            var a = f32(max_gray_shade) / 2;
+
+            var cycles = 1.1;
+            var pi = 3.14159;
+            var b = 2 * pi * cycles / f32(max_iterations);
+
+            var shade = a * (sin((b * f32(iterations))) + 1.0);
+            return u32(shade);
+          }
+
+          fn mandel_iterations(r_val0: f32, i_val0: f32) -> u32 {
+            var r_val = r_val0;
+            var i_val = i_val0;
+
+            var iterations: u32 = 0;
+            
+            for(iterations = 0; (r_val * r_val + i_val * i_val <= (2 * 2)) && (iterations < max_iterations); iterations = iterations + 1) {
+              var r_temp = r_val * r_val - i_val * i_val + r_val0;
+              i_val = 2 * r_val * i_val + i_val0;
+              r_val = r_temp;
+            }
+
+            return iterations;
+          }
+
+          fn mandel_iterations_oversampled(r_val0: f32, i_val0: f32, r_delta: f32, i_delta: f32) -> u32 {
+            var iterations_avg = 
+              mandel_iterations(r_val0, i_val0) +
+              mandel_iterations(r_val0 + r_delta, i_val0 + i_delta) +
+              mandel_iterations(r_val0 + r_delta, i_val0) +
+              mandel_iterations(r_val0 + r_delta, i_val0 - i_delta) +
+              mandel_iterations(r_val0, i_val0 - i_delta) +
+              mandel_iterations(r_val0 - r_delta, i_val0 - i_delta) +
+              mandel_iterations(r_val0 - r_delta, i_val0) +
+              mandel_iterations(r_val0 - r_delta, i_val0 + i_delta) +
+              mandel_iterations(r_val0, i_val0 + i_delta);
+
+            iterations_avg = iterations_avg / 9;
+            return iterations_avg;
           }
 
           @compute @workgroup_size(64)
@@ -78,6 +125,11 @@
             var i_pixels = u32(i_size);
             var r_width = input[2] - input[0];
             var i_width = input[3] - input[1];
+            var r_delta = f32(r_width) / f32(r_pixels);
+            var i_delta = f32(i_width) / f32(i_pixels);
+            var delta_scale = 0.30;
+            var r_delta_scaled = r_delta * delta_scale;
+            var i_delta_scaled = i_delta * delta_scale;
             var r0 = input[0];
             var i0 = input[1];
             var iterations: u32 = 0;
@@ -88,19 +140,16 @@
             else {
               var r_index = global_id.x % r_pixels;
               var i_index = global_id.x / r_pixels;
-              var r_val0 = r0 + r_width * f32(r_index) / f32(r_pixels);
-              var i_val0 = i0 + i_width * f32(i_index) / f32(i_pixels);
-              var r_val = r_val0;
-              var i_val = i_val0;
+              var r_val0 = r0 + f32(r_index) * r_delta;
+              var i_val0 = i0 + f32(i_index) * i_delta;
               
-              for(iterations = 0; (r_val * r_val + i_val * i_val <= (2 * 2)) && (iterations < max_iterations); iterations = iterations + 1) {
-                var r_temp = r_val * r_val - i_val * i_val + r_val0;
-                i_val = 2 * r_val * i_val + i_val0;
-                r_val = r_temp;
-              }
+              //iterations = mandel_iterations(r_val0, i_val0);
+              iterations = mandel_iterations_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
             }
 
-            output[global_id.x] = f32(gray_shade(iterations));
+            //var shade = gray_shade(iterations);
+            var shade = gray_shade2(iterations);
+            output[global_id.x] = f32(shade);
           }
         `,
       });
@@ -234,6 +283,7 @@
       context.putImageData(imageData, 0, 0);
       console.log(imageData);
       console.log("so far so good  3");
+
       statusMsg.innerText = "Done!";
 
 
