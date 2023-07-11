@@ -50,7 +50,7 @@
           var<storage, read> input: array<f32>;
 
           @group(0) @binding(1)
-          var<storage, read_write> output: array<f32>;
+          var<storage, read_write> output: array<u32>;
 
           var<private> max_iterations: u32 = 2000;
           var<private> max_gray_shade:u32 = 255;
@@ -70,8 +70,13 @@
             var pi = 3.14159;
             var b = 2 * pi * cycles / f32(max_iterations);
 
-            var shade = a * (sin((b * f32(iterations))) + 1.0);
-            return u32(shade);
+            var color_offset = (2 * pi) * 0.49; // arbitrary
+            
+            var red = u32(a * (sin((b * f32(iterations) + color_offset)) + 1.0));
+            var green = u32(a * (sin((b * f32(iterations) + color_offset + (2.0 * pi / 3))) + 1.0));
+            var blue = u32(a * (sin((b * f32(iterations) + color_offset + (4.0 * pi / 3))) + 1.0));
+            var color = red | (green << 8) | (blue << 16);
+            return color;
           }
 
           fn mandel_iterations(r_val0: f32, i_val0: f32) -> u32 {
@@ -115,9 +120,6 @@
             local_id : vec3<u32>,
 
           ) {
-            if(global_id.x >= arrayLength(&output)) {
-              return;
-            }
 
             var r_size = input[4];
             var i_size = input[5];
@@ -134,6 +136,10 @@
             var i0 = input[1];
             var iterations: u32 = 0;
 
+            if(global_id.x >= (r_pixels * i_pixels)) {
+              return;
+            }
+
             if(global_id.x >= u32(r_pixels * i_pixels)) {
               iterations = max_iterations;
             }
@@ -149,7 +155,7 @@
 
             //var shade = gray_shade(iterations);
             var shade = gray_shade2(iterations);
-            output[global_id.x] = f32(shade);
+            output[global_id.x] = shade;
           }
         `,
       });
@@ -259,23 +265,22 @@
       console.log(copyArrayBuffer);
       const data = copyArrayBuffer.slice();
       stagingBuffer.unmap();
-      console.log(new Float32Array(data));
+      console.log(new Uint32Array(data));
 
 
       console.log("so far so good  2");
 
-      let pixelData = new Float32Array(data);
+      let pixelData = new Uint32Array(data);
       const context = canvas.getContext('2d');
       const imageData = context.getImageData(0, 0, rPixels, iPixels);
       const pixels = imageData.data;
       let idx = 0;
       for (let x = 0; x < rPixels*iPixels; x++) {
-        pixels[idx] = pixelData[x];
+        pixels[idx] = pixelData[x] & 0xFF;
         idx++;
-        pixels[idx] = pixelData[x];
+        pixels[idx] = (pixelData[x] >> 8) & 0xFF;
         idx++;
-        pixels[idx] = pixelData[x]
-        ;
+        pixels[idx] = (pixelData[x] >> 16) & 0xFF;
         idx++;
         pixels[idx] = 255;
         idx++;
