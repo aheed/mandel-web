@@ -7,13 +7,11 @@
   </head>
   <body>
     <canvas id="mandel-canvas" width="1024" height="1024"></canvas>
-    <canvas id="mandel-canvas2" width="256" height="256"></canvas>
     <div id="status-msg"></div>
     <script type="module">
       const WORKGROUP_SIZE = 8;
 
       const canvas = document.querySelector("#mandel-canvas");
-      const canvas2 = document.querySelector ("#mandel-canvas2");
       const statusMsg = document.querySelector("div");
 
       const urlParams = new URLSearchParams(window.location.search);
