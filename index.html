@@ -6,7 +6,7 @@
     <title>Mandel WebGPU</title>
   </head>
   <body>
-    <canvas id="mandel-canvas" width="512" height="512"></canvas>
+    <canvas id="mandel-canvas" width="1024" height="1024"></canvas>
     <canvas id="mandel-canvas2" width="256" height="256"></canvas>
     <div id="status-msg"></div>
     <script type="module">
@@ -18,8 +18,8 @@
 
       const urlParams = new URLSearchParams(window.location.search);
 
-      const rPixels = 512;
-      const iPixels = 512;
+      const rPixels = 1000;
+      const iPixels = 1000;
       
 
       // WebGPU device initialization
@@ -237,8 +237,8 @@
       );
       const commands = commandEncoder.finish();
 
-      const rMin = urlParams.get('rmin') ?? -2.0;
-      const rMax = urlParams.get('rmax') ?? 2.0;
+      const rMin = urlParams.get('rmin') ?? -1.5;
+      const rMax = urlParams.get('rmax') ?? 0.5;
       const iMin = urlParams.get('imin') ?? -1.0;
       const iMax = urlParams.get('imax') ?? 1.0;
       console.log(rMin, rMax, iMin, iMax);

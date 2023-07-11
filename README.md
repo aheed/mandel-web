@@ -26,4 +26,6 @@ Alternative:
 
 Separate number of color cycles for each of r,g,b
 
+Set canvas size by query params
+
 
