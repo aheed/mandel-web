@@ -24,8 +24,10 @@ Alternative:
   https://codelabs.developers.google.com/your-first-webgpu-app#0
 
 
-Separate number of color cycles for each of r,g,b
+Separate number of color cycles for each of r,g,b*
 
 Set canvas size by query params
+
+Box filter by color values, not by iterations count*
 
 

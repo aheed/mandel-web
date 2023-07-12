@@ -6,7 +6,7 @@
     <title>Mandel WebGPU</title>
   </head>
   <body>
-    <canvas id="mandel-canvas" width="1024" height="1024"></canvas>
+    <canvas id="mandel-canvas" width="2048" height="2048"></canvas>
     <div id="status-msg"></div>
     <script type="module">
       const WORKGROUP_SIZE = 8;
@@ -16,8 +16,8 @@
 
       const urlParams = new URLSearchParams(window.location.search);
 
-      const rPixels = 1000;
-      const iPixels = 1000;
+      const rPixels = 2000;
+      const iPixels = 2000;
       
 
       // WebGPU device initialization
@@ -206,6 +206,7 @@
               //iterations = mandel_iterations(r_val0, i_val0);
               //iterations = mandel_iterations_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
               color = mandel_color_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
+              //color = colorize_color(mandel_iterations(r_val0, i_val0));
             }
 
             //var shade = gray_shade(iterations);
@@ -282,7 +283,7 @@
       passEncoder.setPipeline(pipeline);
       passEncoder.setBindGroup(0, bindGroup);
       passEncoder.dispatchWorkgroups(1);
-      passEncoder.dispatchWorkgroups(Math.ceil(BUFFER_SIZE / 64));
+      passEncoder.dispatchWorkgroups(Math.ceil(BUFFER_SIZE / 256));
       passEncoder.end();
       commandEncoder.copyBufferToBuffer(
         output,
