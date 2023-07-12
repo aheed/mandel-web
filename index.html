@@ -144,6 +144,25 @@
             return iterations_avg;
           }
 
+          fn mandel_color_oversampled(r_val0: f32, i_val0: f32, r_delta: f32, i_delta: f32) -> u32 {
+            var c0 = colorize_color(mandel_iterations(r_val0, i_val0));
+            var c1 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0 + i_delta));
+            var c2 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0));
+            var c3 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0 - i_delta));
+            var c4 = colorize_color(mandel_iterations(r_val0, i_val0 - i_delta));
+            var c5 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0 - i_delta));
+            var c6 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0));
+            var c7 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0 + i_delta));
+            var c8 = colorize_color(mandel_iterations(r_val0, i_val0 + i_delta));
+
+            var red_avg = ((c0 & 0xff) + (c1 & 0xff) + (c2 & 0xff) + (c3 & 0xff) + (c4 & 0xff) + (c5 & 0xff) + (c6 & 0xff) + (c7 & 0xff) + (c8 & 0xff)) / 9;
+            var green_avg = (((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff) + ((c2 >> 8) & 0xff) + ((c3 >> 8) & 0xff) + ((c4 >> 8) & 0xff) + ((c5 >> 8) & 0xff) + ((c6 >> 8) & 0xff) + ((c7 >> 8) & 0xff) + ((c8 >> 8) & 0xff)) / 9;
+            var blue_avg = (((c0 >> 16) & 0xff) + ((c1 >> 16) & 0xff) + ((c2 >> 16) & 0xff) + ((c3 >> 16) & 0xff) + ((c4 >> 16) & 0xff) + ((c5 >> 16) & 0xff) + ((c6 >> 16) & 0xff) + ((c7 >> 16) & 0xff) + ((c8 >> 16) & 0xff)) / 9;
+
+            var color_avg = red_avg | (green_avg << 8) | (blue_avg << 16);
+            return color_avg;
+          }
+
           @compute @workgroup_size(64)
           fn main(
 
@@ -163,19 +182,20 @@
             var i_width = input[3] - input[1];
             var r_delta = f32(r_width) / f32(r_pixels);
             var i_delta = f32(i_width) / f32(i_pixels);
-            var delta_scale = 0.30;
+            var delta_scale = 0.99;
             var r_delta_scaled = r_delta * delta_scale;
             var i_delta_scaled = i_delta * delta_scale;
             var r0 = input[0];
             var i0 = input[1];
-            var iterations: u32 = 0;
+            //var iterations: u32 = 0;
+            var color: u32 = 0;
 
-            if(global_id.x >= (r_pixels * i_pixels)) {
+            if(global_id.x >= (r_pixels * i_pixels)) {  //unnecessary?
               return;
             }
 
-            if(global_id.x >= u32(r_pixels * i_pixels)) {
-              iterations = max_iterations;
+            if(global_id.x >= u32(r_pixels * i_pixels)) {  //unnecessary?
+              color = 0;
             }
             else {
               var r_index = global_id.x % r_pixels;
@@ -184,13 +204,14 @@
               var i_val0 = i0 + f32(i_index) * i_delta;
               
               //iterations = mandel_iterations(r_val0, i_val0);
-              iterations = mandel_iterations_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
+              //iterations = mandel_iterations_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
+              color = mandel_color_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
             }
 
             //var shade = gray_shade(iterations);
             //var shade = colorize_gray(iterations);
-            var shade = colorize_color(iterations);
-            output[global_id.x] = shade;
+            //var shade = colorize_color(iterations);
+            output[global_id.x] = color;
           }
         `,
       });
