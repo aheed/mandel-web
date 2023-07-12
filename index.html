@@ -59,17 +59,20 @@
             return max_gray_shade - (max_gray_shade * iterations) / max_iterations;
           }
 
-          fn calc_color(iterations: u32, color_offset: f32, color_cycles: f32, phase_rad: f32) -> u32 {
+          fn calc_color(iterations: u32, color_cycles: f32, phase_rad: f32) -> u32 {
             var a = f32(max_color_intensity) / 2;
             var b = 2 * pi * color_cycles / f32(max_iterations);
+
+            // non-logarithmic implementation:
             //var c = f32(max_color_intensity) / log(f32(max_color_intensity));
-            //return u32(a * (sin((b * f32(iterations) + color_offset + phase_rad)) + 1.0));
+            //return u32(a * (sin((b * f32(iterations) + phase_rad)) + 1.0));
+
+            // logarithmic
             var c = f32(max_iterations) / log(f32(max_iterations));
-            return u32(a * (sin((b * c * log(f32(iterations)) + color_offset + phase_rad)) + 1.0));
+            return u32(a * (sin((b * c * log(f32(iterations)) + phase_rad)) + 1.0));
           }
 
           fn colorize_calc(iterations: u32,
-                   color_offset: f32,
                    cycles_red: f32,
                    phase_rad_red: f32,
                    cycles_green: f32,
@@ -80,9 +83,9 @@
               return 0;
             }
             
-            var red = calc_color(iterations, color_offset, cycles_red, phase_rad_red);
-            var green = calc_color(iterations, color_offset, cycles_green, phase_rad_green);
-            var blue = calc_color(iterations, color_offset, cycles_blue, phase_rad_blue);
+            var red = calc_color(iterations, cycles_red, phase_rad_red);
+            var green = calc_color(iterations, cycles_green, phase_rad_green);
+            var blue = calc_color(iterations, cycles_blue, phase_rad_blue);
             var color = red | (green << 8) | (blue << 16);
             return color;
           }
@@ -95,14 +98,19 @@
             var phase_rad_green = phase_rad_red + (2.0 * pi / 3);
             var phase_rad_blue = phase_rad_green + (2.0 * pi / 3);
             var color_offset = (2 * pi) * 0.24; // arbitrary
-            return colorize_calc(iterations, color_offset, cycles_red, phase_rad_red, cycles_green, phase_rad_green, cycles_blue, phase_rad_blue);
+            return colorize_calc(iterations,
+              cycles_red,
+              color_offset + phase_rad_red,
+              cycles_green,
+              color_offset + phase_rad_green,
+              cycles_blue,
+              color_offset + phase_rad_blue);
           }
 
           fn colorize_gray(iterations: u32) -> u32 {
             var cycles = 1.49;
-            var phase_rad = 0.0;
-            var color_offset = (2 * pi) * 0.2; // arbitrary
-            return colorize_calc(iterations, color_offset, cycles, phase_rad, cycles, phase_rad, cycles, phase_rad);
+            var phase_rad = (2 * pi) * 0.2; // arbitrary
+            return colorize_calc(iterations, cycles, phase_rad, cycles, phase_rad, cycles, phase_rad);
           }
 
           fn mandel_iterations(r_val0: f32, i_val0: f32) -> u32 {
