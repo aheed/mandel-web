@@ -4,20 +4,142 @@
   <head>
     <meta charset="utf-8">
     <title>Mandel WebGPU</title>
+    <style>
+
+        #mandel-canvas {
+          border: 1px solid black;
+        }
+
+        #lasso {
+          border: 1px dashed black;
+          position: absolute;
+          z-index: 10;
+        }
+
+    </style>
   </head>
   <body>
+    <div id="lasso" style="width: 0px; height: 0px"></div>
     <canvas id="mandel-canvas" width="2048" height="2048"></canvas>
     <div id="status-msg"></div>
     <script type="module">
       const WORKGROUP_SIZE = 8;
 
       const canvas = document.querySelector("#mandel-canvas");
-      const statusMsg = document.querySelector("div");
+      const statusMsg = document.querySelector("#status-msg");
 
       const urlParams = new URLSearchParams(window.location.search);
 
       const rPixels = 2000;
       const iPixels = 2000;
+
+      var lasso = document.getElementById('lasso');
+      var isMouseDown = false;
+      var startCoords = [];
+      var endCoords = [];
+      var minX, minY, maxX, maxY;
+      const minSelectionPixelSize = 20;
+
+      const rMin = urlParams.get('rmin') ? Number(urlParams.get('rmin')) : -1.5;
+      const rMax = urlParams.get('rmax') ? Number(urlParams.get('rmax')) : 0.5;
+      const iMin = urlParams.get('imin') ? Number(urlParams.get('imin')) : -1.0;
+      const iMax = urlParams.get('imax') ? Number(urlParams.get('imax')) : 1.0;
+      console.log(rMin, rMax, iMin, iMax);
+      var rMinSelected = rMin;
+      var rMaxSelected = rMax;
+      var iMinSelected = iMin;
+      var iMaxSelected = iMax;
+
+      const updateCoords = () => {
+        if (endCoords[0] - startCoords[0] < 0) {
+          minX = endCoords[0];
+          maxX = startCoords[0];
+        }
+        else {
+          minX = startCoords[0];
+          maxX = endCoords[0];
+        }
+        if (endCoords[1] - startCoords[1] < 0) {
+          minY = endCoords[1];
+          maxY = startCoords[1];
+        }
+        else {
+          minY = startCoords[1];
+          maxY = endCoords[1];
+        }
+        
+        lasso.style.left = minX + 'px';
+        lasso.style.top = minY + 'px';
+        lasso.style.width = Math.abs(endCoords[0] - startCoords[0]) + 'px';
+        lasso.style.height = Math.abs(endCoords[1] - startCoords[1]) + 'px';
+
+        console.log(minX, maxX, minY, maxY);
+
+        var rSpan = rMax - rMin;
+        var iSpan = iMax - iMin;
+
+        var minXRel = minX - canvas.offsetLeft;
+        var maxXRel = maxX - canvas.offsetLeft;
+        var minYRel = minY - canvas.offsetTop;
+        var maxYRel = maxY - canvas.offsetTop;
+        console.log(minXRel, maxXRel, minYRel, maxYRel);
+
+
+        rMinSelected = rMin + rSpan * minXRel / rPixels;
+        rMaxSelected = rMin + rSpan * maxXRel / rPixels;
+        iMinSelected = iMin + iSpan * (1 - maxYRel / rPixels);
+        iMaxSelected = iMin + iSpan * (1 - minYRel / rPixels);
+        console.log(rSpan, iSpan);
+        console.log(rMinSelected, rMaxSelected, iMinSelected, iMaxSelected);
+      };
+
+      lasso.onmousedown = function(e) {
+        console.log("lasso onmousedown");
+        return false;
+      };
+
+      lasso.onmousemove = function(e) {
+        console.log("lasso onmousemove");
+        return false;
+      };
+
+      lasso.onmouseup = function(e) {
+        console.log("lasso onmouseup");
+        return false;
+      };
+
+      document.body.onmousedown = function(e) {
+          console.log("document onmousedown");
+          isMouseDown = true;
+          //startCoords = [e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop];
+          startCoords = [e.pageX, e.pageY];
+          endCoords = startCoords;
+          updateCoords();
+          lasso.style.visibility = 'visible';
+      };
+
+      document.body.onmousemove = function(e) {
+          console.log("document onmousemove");
+          if (!isMouseDown) return;
+          //endCoords = [e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop];
+          endCoords = [e.pageX, e.pageY];
+          updateCoords();          
+      };
+
+      document.body.onmouseup = function(e) {
+          console.log("document onmouseup");
+          isMouseDown = false;
+          if ( ((maxX - minX) > minSelectionPixelSize) && ((maxY - minY) > minSelectionPixelSize))
+          {
+            console.log("zoom!");
+            window.location.search = `?rmin=${rMinSelected}&rmax=${rMaxSelected}&imin=${iMinSelected}&imax=${iMaxSelected}`;
+          }
+          else {
+            console.log("selected area too small!");
+            lasso.style.visibility = 'hidden';
+          }
+      };
+      
       
 
       // WebGPU device initialization
@@ -201,7 +323,7 @@
               var r_index = global_id.x % r_pixels;
               var i_index = global_id.x / r_pixels;
               var r_val0 = r0 + f32(r_index) * r_delta;
-              var i_val0 = i0 + f32(i_index) * i_delta;
+              var i_val0 = i0 + i_width - f32(i_index) * i_delta;
               
               //iterations = mandel_iterations(r_val0, i_val0);
               //iterations = mandel_iterations_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
@@ -293,12 +415,6 @@
         BUFFER_SIZE
       );
       const commands = commandEncoder.finish();
-
-      const rMin = urlParams.get('rmin') ?? -1.5;
-      const rMax = urlParams.get('rmax') ?? 0.5;
-      const iMin = urlParams.get('imin') ?? -1.0;
-      const iMax = urlParams.get('imax') ?? 1.0;
-      console.log(rMin, rMax, iMin, iMax);
 
       let inputArr = new Float32Array(new ArrayBuffer(BUFFER_SIZE));
       inputArr[0] = rMin;
