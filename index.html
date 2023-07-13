@@ -40,6 +40,16 @@
       var minX, minY, maxX, maxY;
       const minSelectionPixelSize = 20;
 
+      const rMin = Number(urlParams.get('rmin')) ?? -1.5;
+      const rMax = Number(urlParams.get('rmax')) ?? 0.5;
+      const iMin = Number(urlParams.get('imin')) ?? -1.0;
+      const iMax = Number(urlParams.get('imax')) ?? 1.0;
+      console.log(rMin, rMax, iMin, iMax);
+      var rMinSelected = rMin;
+      var rMaxSelected = rMax;
+      var iMinSelected = iMin;
+      var iMaxSelected = iMax;
+
       const updateCoords = () => {
         if (endCoords[0] - startCoords[0] < 0) {
           minX = endCoords[0];
@@ -64,6 +74,23 @@
         lasso.style.height = Math.abs(endCoords[1] - startCoords[1]) + 'px';
 
         console.log(minX, maxX, minY, maxY);
+
+        var rSpan = rMax - rMin;
+        var iSpan = iMax - iMin;
+
+        var minXRel = minX - canvas.offsetLeft;
+        var maxXRel = maxX - canvas.offsetLeft;
+        var minYRel = minY - canvas.offsetTop;
+        var maxYRel = maxY - canvas.offsetTop;
+        console.log(minXRel, maxXRel, minYRel, maxYRel);
+
+
+        rMinSelected = rMin + rSpan * minXRel / rPixels;
+        rMaxSelected = rMin + rSpan * maxXRel / rPixels;
+        iMinSelected = iMin + rSpan * (1 - maxYRel / rPixels);
+        iMaxSelected = iMin + rSpan * (1 - minYRel / rPixels);
+        console.log(rSpan, iSpan);
+        console.log(rMinSelected, rMaxSelected, iMinSelected, iMaxSelected);
       };
 
       lasso.onmousedown = function(e) {
@@ -387,12 +414,6 @@
         BUFFER_SIZE
       );
       const commands = commandEncoder.finish();
-
-      const rMin = urlParams.get('rmin') ?? -1.5;
-      const rMax = urlParams.get('rmax') ?? 0.5;
-      const iMin = urlParams.get('imin') ?? -1.0;
-      const iMax = urlParams.get('imax') ?? 1.0;
-      console.log(rMin, rMax, iMin, iMax);
 
       let inputArr = new Float32Array(new ArrayBuffer(BUFFER_SIZE));
       inputArr[0] = rMin;
