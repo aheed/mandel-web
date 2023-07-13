@@ -5,32 +5,34 @@
     <meta charset="utf-8">
     <title>Mandel WebGPU</title>
     <style>
-        #selectable-area {
-            position: relative;
-            border: 1px solid black;
+
+        #mandel-canvas {
+          border: 1px solid black;
         }
 
         #lasso {
           border: 1px dashed black;
           position: absolute;
+          z-index: 10;
         }
 
-        .selected {
-            border: 2px solid red;
-        }
     </style>
   </head>
   <body>
-    <div id="selectable-area" style="width: 500px; height: 500px;">
-        <div id="lasso" style="width: 0px; height: 0px;"></div>
-        <div style="position: absolute; top: 50px; left: 50px; width: 100px; height: 100px; background: lightblue;"></div>
-        <div style="position: absolute; top: 200px; left: 200px; width: 100px; height: 100px; background: lightgreen;"></div>
-        <div style="position: absolute; top: 350px; left: 350px; width: 100px; height: 100px; background: lightyellow;"></div>
-    </div>
+    <div id="lasso" style="width: 0px; height: 0px"></div>
     <canvas id="mandel-canvas" width="2048" height="2048"></canvas>
     <div id="status-msg"></div>
     <script type="module">
-      var selectableArea = document.getElementById('selectable-area');
+      const WORKGROUP_SIZE = 8;
+
+      const canvas = document.querySelector("#mandel-canvas");
+      const statusMsg = document.querySelector("#status-msg");
+
+      const urlParams = new URLSearchParams(window.location.search);
+
+      const rPixels = 1000;
+      const iPixels = 1000;
+
       var lasso = document.getElementById('lasso');
       var isMouseDown = false;
       var startCoords = [];
@@ -64,21 +66,41 @@
         console.log(minX, maxX, minY, maxY);
       };
 
-      selectableArea.onmousedown = function(e) {
+      lasso.onmousedown = function(e) {
+        console.log("lasso onmousedown");
+        return false;
+      };
+
+      lasso.onmousemove = function(e) {
+        console.log("lasso onmousemove");
+        return false;
+      };
+
+      lasso.onmouseup = function(e) {
+        console.log("lasso onmouseup");
+        return false;
+      };
+
+      document.body.onmousedown = function(e) {
+          console.log("document onmousedown");
           isMouseDown = true;
-          startCoords = [e.pageX - selectableArea.offsetLeft, e.pageY - selectableArea.offsetTop];
+          //startCoords = [e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop];
+          startCoords = [e.pageX, e.pageY];
           endCoords = startCoords;
           updateCoords();
           lasso.style.visibility = 'visible';
       };
 
-      selectableArea.onmousemove = function(e) {
+      document.body.onmousemove = function(e) {
+          console.log("document onmousemove");
           if (!isMouseDown) return;
-          endCoords = [e.pageX - selectableArea.offsetLeft, e.pageY - selectableArea.offsetTop];          
+          //endCoords = [e.pageX - canvas.offsetLeft, e.pageY - canvas.offsetTop];
+          endCoords = [e.pageX, e.pageY];
           updateCoords();          
       };
 
-      selectableArea.onmouseup = function(e) {
+      document.body.onmouseup = function(e) {
+          console.log("document onmouseup");
           isMouseDown = false;
           if ( ((maxX - minX) > minSelectionPixelSize) && ((maxY - minY) > minSelectionPixelSize))
           {
@@ -89,17 +111,7 @@
             lasso.style.visibility = 'hidden';
           }
       };
-      /////////////////////
-
-      const WORKGROUP_SIZE = 8;
-
-      const canvas = document.querySelector("#mandel-canvas");
-      const statusMsg = document.querySelector("#status-msg");
-
-      const urlParams = new URLSearchParams(window.location.search);
-
-      const rPixels = 1000;
-      const iPixels = 1000;
+      
       
 
       // WebGPU device initialization
