@@ -40,10 +40,10 @@
       var minX, minY, maxX, maxY;
       const minSelectionPixelSize = 20;
 
-      const rMin = Number(urlParams.get('rmin')) ?? -1.5;
-      const rMax = Number(urlParams.get('rmax')) ?? 0.5;
-      const iMin = Number(urlParams.get('imin')) ?? -1.0;
-      const iMax = Number(urlParams.get('imax')) ?? 1.0;
+      const rMin = urlParams.get('rmin') ? Number(urlParams.get('rmin')) : -1.5;
+      const rMax = urlParams.get('rmax') ? Number(urlParams.get('rmax')) : 0.5;
+      const iMin = urlParams.get('imin') ? Number(urlParams.get('imin')) : -1.0;
+      const iMax = urlParams.get('imax') ? Number(urlParams.get('imax')) : 1.0;
       console.log(rMin, rMax, iMin, iMax);
       var rMinSelected = rMin;
       var rMaxSelected = rMax;
@@ -87,8 +87,8 @@
 
         rMinSelected = rMin + rSpan * minXRel / rPixels;
         rMaxSelected = rMin + rSpan * maxXRel / rPixels;
-        iMinSelected = iMin + rSpan * (1 - maxYRel / rPixels);
-        iMaxSelected = iMin + rSpan * (1 - minYRel / rPixels);
+        iMinSelected = iMin + iSpan * (1 - maxYRel / rPixels);
+        iMaxSelected = iMin + iSpan * (1 - minYRel / rPixels);
         console.log(rSpan, iSpan);
         console.log(rMinSelected, rMaxSelected, iMinSelected, iMaxSelected);
       };
@@ -132,6 +132,7 @@
           if ( ((maxX - minX) > minSelectionPixelSize) && ((maxY - minY) > minSelectionPixelSize))
           {
             console.log("zoom!");
+            window.location.search = `?rmin=${rMinSelected}&rmax=${rMaxSelected}&imin=${iMinSelected}&imax=${iMaxSelected}`;
           }
           else {
             console.log("selected area too small!");
