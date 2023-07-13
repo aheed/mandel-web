@@ -36,63 +36,58 @@
       var startCoords = [];
       var endCoords = [];
       var minX, minY, maxX, maxY;
+      const minSelectionPixelSize = 20;
+
+      const updateCoords = () => {
+        if (endCoords[0] - startCoords[0] < 0) {
+          minX = endCoords[0];
+          maxX = startCoords[0];
+        }
+        else {
+          minX = startCoords[0];
+          maxX = endCoords[0];
+        }
+        if (endCoords[1] - startCoords[1] < 0) {
+          minY = endCoords[1];
+          maxY = startCoords[1];
+        }
+        else {
+          minY = startCoords[1];
+          maxY = endCoords[1];
+        }
+        
+        lasso.style.left = minX + 'px';
+        lasso.style.top = minY + 'px';
+        lasso.style.width = Math.abs(endCoords[0] - startCoords[0]) + 'px';
+        lasso.style.height = Math.abs(endCoords[1] - startCoords[1]) + 'px';
+
+        console.log(minX, maxX, minY, maxY);
+      };
 
       selectableArea.onmousedown = function(e) {
           isMouseDown = true;
           startCoords = [e.pageX - selectableArea.offsetLeft, e.pageY - selectableArea.offsetTop];
           endCoords = startCoords;
-          lasso.style.width = Math.abs(endCoords[0] - startCoords[0]) + 'px';
-          lasso.style.height = Math.abs(endCoords[1] - startCoords[1]) + 'px';
-          lasso.style.left = startCoords[0] + 'px';
-          lasso.style.top = startCoords[1] + 'px';
-          //lasso.style.visibility = 'visible';
+          updateCoords();
+          lasso.style.visibility = 'visible';
       };
 
       selectableArea.onmousemove = function(e) {
           if (!isMouseDown) return;
-          endCoords = [e.pageX - selectableArea.offsetLeft, e.pageY - selectableArea.offsetTop];
-          lasso.style.width = Math.abs(endCoords[0] - startCoords[0]) + 'px';
-          lasso.style.height = Math.abs(endCoords[1] - startCoords[1]) + 'px';
-          
-          if (endCoords[0] - startCoords[0] < 0) {
-            minX = endCoords[0];
-            maxX = startCoords[0];
-          }
-          else {
-            minX = startCoords[0];
-            maxX = endCoords[0];
-          }
-          if (endCoords[1] - startCoords[1] < 0) {
-            maxY = endCoords[1];
-            minY = startCoords[1];
-          }
-          else {
-            maxY = startCoords[1];
-            minY = endCoords[1];
-          }
-          
-          //lasso.style.left = (endCoords[0] - startCoords[0] < 0) ? endCoords[0] + 'px' : startCoords[0] + 'px';
-          //lasso.style.top = (endCoords[1] - startCoords[1] < 0) ? endCoords[1] + 'px' : startCoords[1] + 'px';
-          lasso.style.left = minX + 'px';
-          lasso.style.top = maxY + 'px';
-
-          console.log(minX, maxX, minY, maxY);
+          endCoords = [e.pageX - selectableArea.offsetLeft, e.pageY - selectableArea.offsetTop];          
+          updateCoords();          
       };
 
       selectableArea.onmouseup = function(e) {
           isMouseDown = false;
-          var elements = selectableArea.getElementsByTagName('div');
-          for (var i = 0; i < elements.length; i++) {
-              var elementCoords = [elements[i].offsetLeft, elements[i].offsetTop];
-              if (elementCoords[0] > startCoords[0] && elementCoords[0] < endCoords[0] &&
-                  elementCoords[1] > startCoords[1] && elementCoords[1] < endCoords[1]) {
-                  elements[i].classList.add('selected');
-              } else {
-                  elements[i].classList.remove('selected');
-              }
+          if ( ((maxX - minX) > minSelectionPixelSize) && ((maxY - minY) > minSelectionPixelSize))
+          {
+            console.log("zoom!");
           }
-          //selectableArea.removeChild(lasso);
-          //lasso.style.visibility = 'hidden';
+          else {
+            console.log("selected area too small!");
+            lasso.style.visibility = 'hidden';
+          }
       };
       /////////////////////
 
@@ -103,8 +98,8 @@
 
       const urlParams = new URLSearchParams(window.location.search);
 
-      const rPixels = 2000;
-      const iPixels = 2000;
+      const rPixels = 1000;
+      const iPixels = 1000;
       
 
       // WebGPU device initialization
