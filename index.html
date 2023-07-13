@@ -4,15 +4,102 @@
   <head>
     <meta charset="utf-8">
     <title>Mandel WebGPU</title>
+    <style>
+        #selectable-area {
+            position: relative;
+            border: 1px solid black;
+        }
+
+        #lasso {
+          border: 1px dashed black;
+          position: absolute;
+        }
+
+        .selected {
+            border: 2px solid red;
+        }
+    </style>
   </head>
   <body>
+    <div id="selectable-area" style="width: 500px; height: 500px;">
+        <div id="lasso" style="width: 0px; height: 0px;"></div>
+        <div style="position: absolute; top: 50px; left: 50px; width: 100px; height: 100px; background: lightblue;"></div>
+        <div style="position: absolute; top: 200px; left: 200px; width: 100px; height: 100px; background: lightgreen;"></div>
+        <div style="position: absolute; top: 350px; left: 350px; width: 100px; height: 100px; background: lightyellow;"></div>
+    </div>
     <canvas id="mandel-canvas" width="2048" height="2048"></canvas>
     <div id="status-msg"></div>
     <script type="module">
+      var selectableArea = document.getElementById('selectable-area');
+      var lasso = document.getElementById('lasso');
+      var isMouseDown = false;
+      var startCoords = [];
+      var endCoords = [];
+      var minX, minY, maxX, maxY;
+
+      selectableArea.onmousedown = function(e) {
+          isMouseDown = true;
+          startCoords = [e.pageX - selectableArea.offsetLeft, e.pageY - selectableArea.offsetTop];
+          endCoords = startCoords;
+          lasso.style.width = Math.abs(endCoords[0] - startCoords[0]) + 'px';
+          lasso.style.height = Math.abs(endCoords[1] - startCoords[1]) + 'px';
+          lasso.style.left = startCoords[0] + 'px';
+          lasso.style.top = startCoords[1] + 'px';
+          //lasso.style.visibility = 'visible';
+      };
+
+      selectableArea.onmousemove = function(e) {
+          if (!isMouseDown) return;
+          endCoords = [e.pageX - selectableArea.offsetLeft, e.pageY - selectableArea.offsetTop];
+          lasso.style.width = Math.abs(endCoords[0] - startCoords[0]) + 'px';
+          lasso.style.height = Math.abs(endCoords[1] - startCoords[1]) + 'px';
+          
+          if (endCoords[0] - startCoords[0] < 0) {
+            minX = endCoords[0];
+            maxX = startCoords[0];
+          }
+          else {
+            minX = startCoords[0];
+            maxX = endCoords[0];
+          }
+          if (endCoords[1] - startCoords[1] < 0) {
+            maxY = endCoords[1];
+            minY = startCoords[1];
+          }
+          else {
+            maxY = startCoords[1];
+            minY = endCoords[1];
+          }
+          
+          //lasso.style.left = (endCoords[0] - startCoords[0] < 0) ? endCoords[0] + 'px' : startCoords[0] + 'px';
+          //lasso.style.top = (endCoords[1] - startCoords[1] < 0) ? endCoords[1] + 'px' : startCoords[1] + 'px';
+          lasso.style.left = minX + 'px';
+          lasso.style.top = maxY + 'px';
+
+          console.log(minX, maxX, minY, maxY);
+      };
+
+      selectableArea.onmouseup = function(e) {
+          isMouseDown = false;
+          var elements = selectableArea.getElementsByTagName('div');
+          for (var i = 0; i < elements.length; i++) {
+              var elementCoords = [elements[i].offsetLeft, elements[i].offsetTop];
+              if (elementCoords[0] > startCoords[0] && elementCoords[0] < endCoords[0] &&
+                  elementCoords[1] > startCoords[1] && elementCoords[1] < endCoords[1]) {
+                  elements[i].classList.add('selected');
+              } else {
+                  elements[i].classList.remove('selected');
+              }
+          }
+          //selectableArea.removeChild(lasso);
+          //lasso.style.visibility = 'hidden';
+      };
+      /////////////////////
+
       const WORKGROUP_SIZE = 8;
 
       const canvas = document.querySelector("#mandel-canvas");
-      const statusMsg = document.querySelector("div");
+      const statusMsg = document.querySelector("#status-msg");
 
       const urlParams = new URLSearchParams(window.location.search);
 
