@@ -33,8 +33,6 @@
       const rPixels = 2000;
       const iPixels = 2000;
 
-      const scale = 1000;
-
       var lasso = document.getElementById('lasso');
       var isMouseDown = false;
       var startCoords = [];
@@ -42,22 +40,15 @@
       var minX, minY, maxX, maxY;
       const minSelectionPixelSize = 20;
 
-      let rMin = urlParams.get('rmin') ? Number(urlParams.get('rmin')) : -1.5;
-      let rMax = urlParams.get('rmax') ? Number(urlParams.get('rmax')) : 0.5;
-      let iMin = urlParams.get('imin') ? Number(urlParams.get('imin')) : -1.0;
-      let iMax = urlParams.get('imax') ? Number(urlParams.get('imax')) : 1.0;
-      
+      const rMin = urlParams.get('rmin') ? Number(urlParams.get('rmin')) : -1.5;
+      const rMax = urlParams.get('rmax') ? Number(urlParams.get('rmax')) : 0.5;
+      const iMin = urlParams.get('imin') ? Number(urlParams.get('imin')) : -1.0;
+      const iMax = urlParams.get('imax') ? Number(urlParams.get('imax')) : 1.0;
       console.log(rMin, rMax, iMin, iMax);
       var rMinSelected = rMin;
       var rMaxSelected = rMax;
       var iMinSelected = iMin;
       var iMaxSelected = iMax;
-
-      rMin = rMin * scale;
-      rMax = rMax * scale;
-      iMin = iMin * scale;
-      iMax = iMax * scale;
-      console.log(rMin, rMax, iMin, iMax);
 
       const updateCoords = () => {
         if (endCoords[0] - startCoords[0] < 0) {
@@ -94,10 +85,10 @@
         console.log(minXRel, maxXRel, minYRel, maxYRel);
 
 
-        rMinSelected = (rMin + rSpan * minXRel / rPixels) / scale;
-        rMaxSelected = (rMin + rSpan * maxXRel / rPixels) / scale;
-        iMinSelected = (iMin + iSpan * (1 - maxYRel / rPixels)) / scale;
-        iMaxSelected = (iMin + iSpan * (1 - minYRel / rPixels)) / scale;
+        rMinSelected = rMin + rSpan * minXRel / rPixels;
+        rMaxSelected = rMin + rSpan * maxXRel / rPixels;
+        iMinSelected = iMin + iSpan * (1 - maxYRel / rPixels);
+        iMaxSelected = iMin + iSpan * (1 - minYRel / rPixels);
         console.log(rSpan, iSpan);
         console.log(rMinSelected, rMaxSelected, iMinSelected, iMaxSelected);
       };
@@ -244,22 +235,22 @@
             return colorize_calc(iterations, cycles, phase_rad, cycles, phase_rad, cycles, phase_rad);
           }
 
-          fn mandel_iterations(r_val0: f32, i_val0: f32, scale: f32) -> u32 {
+          fn mandel_iterations(r_val0: f32, i_val0: f32) -> u32 {
             var r_val = r_val0;
             var i_val = i_val0;
 
             var iterations: u32 = 0;
             
-            for(iterations = 0; (r_val * r_val + i_val * i_val <= (2 * 2 * scale * scale)) && (iterations < max_iterations); iterations = iterations + 1) {
-              var r_temp = (r_val * r_val - i_val * i_val) / scale + r_val0;
-              i_val = 2 * r_val * i_val / scale + i_val0;
+            for(iterations = 0; (r_val * r_val + i_val * i_val <= (2 * 2)) && (iterations < max_iterations); iterations = iterations + 1) {
+              var r_temp = r_val * r_val - i_val * i_val + r_val0;
+              i_val = 2 * r_val * i_val + i_val0;
               r_val = r_temp;
             }
 
             return iterations;
           }
 
-          /*fn mandel_iterations_oversampled(r_val0: f32, i_val0: f32, r_delta: f32, i_delta: f32) -> u32 {
+          fn mandel_iterations_oversampled(r_val0: f32, i_val0: f32, r_delta: f32, i_delta: f32) -> u32 {
             var iterations_avg = 
               mandel_iterations(r_val0, i_val0) +
               mandel_iterations(r_val0 + r_delta, i_val0 + i_delta) +
@@ -273,18 +264,18 @@
 
             iterations_avg = iterations_avg / 9;
             return iterations_avg;
-          }*/
+          }
 
-          fn mandel_color_oversampled(r_val0: f32, i_val0: f32, r_delta: f32, i_delta: f32, scale: f32) -> u32 {
-            var c0 = colorize_color(mandel_iterations(r_val0, i_val0, scale));
-            var c1 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0 + i_delta, scale));
-            var c2 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0, scale));
-            var c3 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0 - i_delta, scale));
-            var c4 = colorize_color(mandel_iterations(r_val0, i_val0 - i_delta, scale));
-            var c5 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0 - i_delta, scale));
-            var c6 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0, scale));
-            var c7 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0 + i_delta, scale));
-            var c8 = colorize_color(mandel_iterations(r_val0, i_val0 + i_delta, scale));
+          fn mandel_color_oversampled(r_val0: f32, i_val0: f32, r_delta: f32, i_delta: f32) -> u32 {
+            var c0 = colorize_color(mandel_iterations(r_val0, i_val0));
+            var c1 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0 + i_delta));
+            var c2 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0));
+            var c3 = colorize_color(mandel_iterations(r_val0 + r_delta, i_val0 - i_delta));
+            var c4 = colorize_color(mandel_iterations(r_val0, i_val0 - i_delta));
+            var c5 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0 - i_delta));
+            var c6 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0));
+            var c7 = colorize_color(mandel_iterations(r_val0 - r_delta, i_val0 + i_delta));
+            var c8 = colorize_color(mandel_iterations(r_val0, i_val0 + i_delta));
 
             var red_avg = ((c0 & 0xff) + (c1 & 0xff) + (c2 & 0xff) + (c3 & 0xff) + (c4 & 0xff) + (c5 & 0xff) + (c6 & 0xff) + (c7 & 0xff) + (c8 & 0xff)) / 9;
             var green_avg = (((c0 >> 8) & 0xff) + ((c1 >> 8) & 0xff) + ((c2 >> 8) & 0xff) + ((c3 >> 8) & 0xff) + ((c4 >> 8) & 0xff) + ((c5 >> 8) & 0xff) + ((c6 >> 8) & 0xff) + ((c7 >> 8) & 0xff) + ((c8 >> 8) & 0xff)) / 9;
@@ -318,7 +309,6 @@
             var i_delta_scaled = i_delta * delta_scale;
             var r0 = input[0];
             var i0 = input[1];
-            var scale =  f32(input[6]);
             //var iterations: u32 = 0;
             var color: u32 = 0;
 
@@ -337,7 +327,7 @@
               
               //iterations = mandel_iterations(r_val0, i_val0);
               //iterations = mandel_iterations_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
-              color = mandel_color_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled, scale);
+              color = mandel_color_oversampled(r_val0, i_val0, r_delta_scaled, i_delta_scaled);
               //color = colorize_color(mandel_iterations(r_val0, i_val0));
             }
 
@@ -435,7 +425,6 @@
 
       inputArr[4] = rPixels;
       inputArr[5] = iPixels;
-      inputArr[6] = scale;
 
       device.queue.writeBuffer(input, 0, inputArr);
       device.queue.submit([commands]);
