@@ -42,10 +42,10 @@
       var minX, minY, maxX, maxY;
       const minSelectionPixelSize = 20;
 
-      let rMin = urlParams.get('rmin') ? Number(urlParams.get('rmin')) : -1.5;
-      let rMax = urlParams.get('rmax') ? Number(urlParams.get('rmax')) : 0.5;
-      let iMin = urlParams.get('imin') ? Number(urlParams.get('imin')) : -1.0;
-      let iMax = urlParams.get('imax') ? Number(urlParams.get('imax')) : 1.0;
+      let rMin = urlParams.get('rmin') ? Number(urlParams.get('rmin')) : -1.5 * scale;
+      let rMax = urlParams.get('rmax') ? Number(urlParams.get('rmax')) : 0.5 * scale;
+      let iMin = urlParams.get('imin') ? Number(urlParams.get('imin')) : -1.0 * scale;
+      let iMax = urlParams.get('imax') ? Number(urlParams.get('imax')) : 1.0 * scale;
       
       console.log(rMin, rMax, iMin, iMax);
       var rMinSelected = rMin;
@@ -53,10 +53,6 @@
       var iMinSelected = iMin;
       var iMaxSelected = iMax;
 
-      rMin = rMin * scale;
-      rMax = rMax * scale;
-      iMin = iMin * scale;
-      iMax = iMax * scale;
       console.log(rMin, rMax, iMin, iMax);
 
       const updateCoords = () => {
@@ -94,10 +90,10 @@
         console.log(minXRel, maxXRel, minYRel, maxYRel);
 
 
-        rMinSelected = (rMin + rSpan * minXRel / rPixels) / scale;
-        rMaxSelected = (rMin + rSpan * maxXRel / rPixels) / scale;
-        iMinSelected = (iMin + iSpan * (1 - maxYRel / rPixels)) / scale;
-        iMaxSelected = (iMin + iSpan * (1 - minYRel / rPixels)) / scale;
+        rMinSelected = (rMin + rSpan * minXRel / rPixels);
+        rMaxSelected = (rMin + rSpan * maxXRel / rPixels);
+        iMinSelected = (iMin + iSpan * (1 - maxYRel / rPixels));
+        iMaxSelected = (iMin + iSpan * (1 - minYRel / rPixels));
         console.log(rSpan, iSpan);
         console.log(rMinSelected, rMaxSelected, iMinSelected, iMaxSelected);
       };
