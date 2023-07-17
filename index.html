@@ -367,9 +367,10 @@
       });
 
       const BUFFER_SIZE = rPixels * iPixels * 4;
+      const INPUT_BUFFER_SIZE = 1024; //should be more than enough for params
 
       const input = device.createBuffer({
-        size: BUFFER_SIZE,
+        size: INPUT_BUFFER_SIZE,
         usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       });
 
@@ -416,7 +417,7 @@
       );
       const commands = commandEncoder.finish();
 
-      let inputArr = new Float32Array(new ArrayBuffer(BUFFER_SIZE));
+      let inputArr = new Float32Array(new ArrayBuffer(INPUT_BUFFER_SIZE));
       inputArr[0] = rMin;
       inputArr[1] = iMin;
       inputArr[2] = rMax;
